@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Lego builder</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#oldie { background-color: #ddd !important }
+		</style>
+	</head>
+	<body>
+
+		<script src="three.js"></script>
+		<script src="Detector.js"></script>
+		<script src="OrbitControls.js"></script>
+
+		<script>
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			var container;
+			var camera, scene, renderer;
+			var plane, cube;
+			var mouse, raycaster, isShiftDown = false;
+			var rollOverMesh, rollOverMaterial;
+			var cubeGeo, cubeMaterial, materials;
+			var objects = [];
+			var bumpMap = "";
+			var isFloating;
+
+			var controls = null;
+
+			var xSize = 1;
+			var zSize = 1;
+
+			var mouseDown = false;
+   			var pageX = 0;
+
+			init();
+			render();
+			function init() {
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+				var info = document.createElement( 'div' );
+				info.style.position = 'absolute';
+				info.style.top = '10px';
+				info.style.width = '100%';
+				info.style.textAlign = 'center';
+				info.innerHTML = '<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - voxel painter - webgl<br><strong>click</strong>: add voxel, <strong>shift + click</strong>: remove voxel <br> <button onclick="changeSize(1,1)">1x1</button> <button onclick="changeSize(2,1)">2x1</button> <button onclick="changeSize(2,2)">2x2</button> <button onclick="changeSize(3,2)">3x2</button> <br> <button onclick="rotatePiece()"> Rotate </button> <br> <button onclick="changeColor(1)">Red</button> <button onclick="changeColor(2)">Blue</button> <button onclick="changeColor(3)">Green</button> <button onclick="changeColor(4)">Yellow</button>';
+
+				container.appendChild( info );
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.set( 500, 800, 1300 );
+				camera.lookAt( new THREE.Vector3() );
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xf0f0f0 );
+				// roll-over helpers
+				var rollOverGeo = new THREE.BoxGeometry( 50*xSize, 50, 50*zSize );
+				rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+				rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+				scene.add( rollOverMesh );
+				// cubes
+				cubeGeo = new THREE.BoxGeometry( 50*xSize, 50, 50*zSize );
+				cubeMaterial = new THREE.MeshLambertMaterial( { color: 0xfffffc, map: new THREE.TextureLoader().load( "square-outline-textured.png" ) } );
+				materials = [
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("legobump.jpeg"), bumpScale: 50 } ),
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+						];
+				bumpMap = "legobump.jpeg";
+				// grid
+				var gridHelper = new THREE.GridHelper( 1000, 20 );
+				scene.add( gridHelper );
+				//
+				raycaster = new THREE.Raycaster();
+				mouse = new THREE.Vector2();
+				var geometry = new THREE.PlaneBufferGeometry( 1000, 1000 );
+				geometry.rotateX( - Math.PI / 2 );
+				plane = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { visible: false } ) );
+				scene.add( plane );
+				objects.push( plane );
+				// Lights
+				var ambientLight = new THREE.AmbientLight( 0x606060 );
+				scene.add( ambientLight );
+				var directionalLight = new THREE.DirectionalLight( 0xffffff );
+				directionalLight.position.set( 1, 0.75, 0.5 ).normalize();
+				scene.add( directionalLight );
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				// document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				// document.addEventListener( 'mouseup', onMouseUp, false );
+				document.addEventListener( 'keydown', onDocumentKeyDown, false );
+				document.addEventListener( 'keyup', onDocumentKeyUp, false );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				var controls = new THREE.OrbitControls( camera, renderer.domElement );
+                controls.update();
+				
+			}
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			function onDocumentMouseMove( event ) {
+				event.preventDefault();
+				// ----- For moving the plane -----//
+				if (mouseDown)
+				{
+					var deltax = event.pageX - pageX;
+			        pageX = event.pageX;
+			        rotateSceneX(deltax);
+				}
+				// ---- ------- -------- ---------//
+
+				mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+				raycaster.setFromCamera( mouse, camera );
+				var intersects = raycaster.intersectObjects( objects );
+				if ( intersects.length > 0 ) {
+					var intersect = intersects[ 0 ];
+					rollOverMesh.position.copy( intersect.point ).add( intersect.face.normal );
+					rollOverMesh.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+					rollOverMesh.collider = (new THREE.Raycaster( rollOverMesh.position, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
+					if(xSize > 1)
+					{
+						rollOverMesh.position.x -= 25 * (xSize-1);
+					}
+					if(zSize > 1)
+					{
+						rollOverMesh.position.z -= 25 * (zSize-1);
+					}
+					var cubeIntersections = rollOverMesh.collider.intersectObjects( objects, true );
+					console.log(cubeIntersections.length);
+					if(cubeIntersections.length > 0)
+					{
+						isFloating = false;
+					}
+					else 
+					{
+						isFloating = true;
+					}
+
+
+				}
+				render();
+			}
+			
+			
+
+			function putPiece(  ) {
+				// event.preventDefault();
+				// ---- Start moving the plane -----
+				mouseDown = true;
+		  //       pageX = event.pageX;
+		        // ---- Finish moving the plane -----
+				// mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+				raycaster.setFromCamera( mouse, camera );
+				var intersects = raycaster.intersectObjects( objects );
+				if ( intersects.length > 0 ) {
+					var intersect = intersects[ 0 ];
+					// delete cube
+					if ( isShiftDown ) {
+						if ( intersect.object != plane ) {
+							scene.remove( intersect.object );
+							objects.splice( objects.indexOf( intersect.object ), 1 );
+						}
+					// create cube
+					} else {
+						if (!isFloating)
+						{
+							var voxel = new THREE.Mesh( cubeGeo, materials );
+							voxel.position.copy( intersect.point ).add( intersect.face.normal );
+							voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+							if(xSize > 1)
+							{
+								voxel.position.x -= 25 * (xSize-1);
+							}
+							if(zSize > 1)
+							{
+								voxel.position.z -= 25 * (zSize-1);
+							}
+							scene.add( voxel );
+							objects.push( voxel );
+						}
+						
+					}
+					render();
+				}
+
+
+			}
+			
+			// function onMouseUp(event)
+		 //    {
+		 //        event.preventDefault();
+		        
+		 //    }
+
+			function onDocumentKeyDown( event ) {
+				switch( event.keyCode ) {
+					case 16: isShiftDown = true; break;
+					case 87: putPiece(); break;
+				}
+			}
+			function onDocumentKeyUp( event ) {
+				switch ( event.keyCode ) {
+					case 16: isShiftDown = false; break;
+					case 87: mouseDown = false; break;
+				}
+			}
+			function render() {
+				renderer.render( scene, camera );
+				controls.update();
+ 			}
+
+			function rotatePiece()
+			{
+				cubeGeo = new THREE.BoxGeometry( 50*zSize, 50, 50*xSize );
+				z = xSize;
+				x = zSize;
+
+				rollOverMesh.scale.x = x;
+				rollOverMesh.scale.z = z;
+
+				xSize = x;
+				zSize = z;
+
+				if(x == 2 && z == 3)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego23.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "lego23.jpeg";
+				}
+				if(x == 1 && z == 2)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego21.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "lego21.jpeg";
+				}
+			}
+
+			function changeSize(x,z)
+			{
+				cubeGeo = new THREE.BoxGeometry( 50*x, 50, 50*z );
+				xSize = x;
+				zSize = z;
+
+				rollOverMesh.scale.x = x;
+				rollOverMesh.scale.z = z;
+
+				if(x == 2 && z == 2)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego22.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "lego22.jpeg";
+				}
+				if(x == 1 && z == 1)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("legobump.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "legobump.jpeg";
+				}
+				if(x == 3 && z == 2)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego32.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "lego32.jpeg";
+				}
+				if(x == 2 && z == 1)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego12.jpeg"), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+					bumpMap = "lego12.jpeg";
+				}
+
+			}
+
+			function changeColor(colorCode)
+			{
+				if(colorCode == 1)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+				}
+				if(colorCode == 2)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+				}
+				if(colorCode == 3)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+				}
+				if(colorCode == 4)
+				{
+					materials = [
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+							];
+				}
+			}
+
+			// function rotateSceneY(deltay)
+			// {
+			//    scene.rotation.x += deltay / 100;
+			// }
+
+			// function rotateSceneX(deltax)
+			// {
+			//    scene.rotation.y += deltax /100;
+			// }
+
+		</script>
+
+	</body>
+</html>
