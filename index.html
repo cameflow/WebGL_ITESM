@@ -131,7 +131,27 @@
 					var intersect = intersects[ 0 ];
 					rollOverMesh.position.copy( intersect.point ).add( intersect.face.normal );
 					rollOverMesh.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
-					rollOverMesh.collider = (new THREE.Raycaster( rollOverMesh.position, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
+					if(xSize > 1)
+					{
+						var xPosRoll = (rollOverMesh.position.x + (25*(1)));
+					}
+					else
+					{
+						var xPosRoll = (rollOverMesh.position.x + (25*(0)));
+					}
+					if(zSize > 1)
+					{
+						var zPosRoll = (rollOverMesh.position.z + (25*(1)));
+					}
+					else
+					{
+						var zPosRoll = (rollOverMesh.position.z + (25*(0)));
+					}
+					
+					// var zPosRoll = (rollOverMesh.position.z - (25*(1)));
+					var rollOverPos = new THREE.Vector3(xPosRoll,rollOverMesh.position.y, zPosRoll);
+					// rollOverMesh.collider = (new THREE.Raycaster( rollOverMesh.position, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
+					rollOverMesh.collider = (new THREE.Raycaster( rollOverPos, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
 					if(xSize > 1)
 					{
 						rollOverMesh.position.x -= 25 * (xSize-1);
@@ -370,15 +390,6 @@
 				}
 			}
 
-			// function rotateSceneY(deltay)
-			// {
-			//    scene.rotation.x += deltay / 100;
-			// }
-
-			// function rotateSceneX(deltax)
-			// {
-			//    scene.rotation.y += deltax /100;
-			// }
 
 		</script>
 
