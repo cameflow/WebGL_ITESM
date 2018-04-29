@@ -30,6 +30,7 @@
 			var cubeGeo, cubeMaterial, materials;
 			var objects = [];
 			var bumpMap = "";
+			var legoColor = 0xff0000;
 			var isFloating;
 
 			var controls = null;
@@ -66,14 +67,8 @@
 				// cubes
 				cubeGeo = new THREE.BoxGeometry( 50*xSize, 50, 50*zSize );
 				cubeMaterial = new THREE.MeshLambertMaterial( { color: 0xfffffc, map: new THREE.TextureLoader().load( "square-outline-textured.png" ) } );
-				materials = [
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("legobump.jpeg"), bumpScale: 50 } ),
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-							new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-						];
+
+				createMaterial(legoColor,"legobump.jpeg");
 				bumpMap = "legobump.jpeg";
 				// grid
 				var gridHelper = new THREE.GridHelper( 1000, 20 );
@@ -106,7 +101,7 @@
 
 				var controls = new THREE.OrbitControls( camera, renderer.domElement );
                 controls.update();
-				
+
 			}
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
@@ -147,7 +142,7 @@
 					{
 						var zPosRoll = (rollOverMesh.position.z + (25*(0)));
 					}
-					
+
 					// var zPosRoll = (rollOverMesh.position.z - (25*(1)));
 					var rollOverPos = new THREE.Vector3(xPosRoll,rollOverMesh.position.y, zPosRoll);
 					// rollOverMesh.collider = (new THREE.Raycaster( rollOverMesh.position, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
@@ -166,7 +161,7 @@
 					{
 						isFloating = false;
 					}
-					else 
+					else
 					{
 						isFloating = true;
 					}
@@ -175,16 +170,11 @@
 				}
 				render();
 			}
-			
-			
+
+
 
 			function putPiece(  ) {
-				// event.preventDefault();
-				// ---- Start moving the plane -----
 				mouseDown = true;
-		  //       pageX = event.pageX;
-		        // ---- Finish moving the plane -----
-				// mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				raycaster.setFromCamera( mouse, camera );
 				var intersects = raycaster.intersectObjects( objects );
 				if ( intersects.length > 0 ) {
@@ -213,19 +203,14 @@
 							scene.add( voxel );
 							objects.push( voxel );
 						}
-						
+
 					}
 					render();
 				}
 
 
 			}
-			
-			// function onMouseUp(event)
-		 //    {
-		 //        event.preventDefault();
-		        
-		 //    }
+
 
 			function onDocumentKeyDown( event ) {
 				switch( event.keyCode ) {
@@ -258,27 +243,13 @@
 
 				if(x == 2 && z == 3)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego23.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "lego23.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 				if(x == 1 && z == 2)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego21.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "lego21.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 			}
 
@@ -293,51 +264,23 @@
 
 				if(x == 2 && z == 2)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego22.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "lego22.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 				if(x == 1 && z == 1)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("legobump.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "legobump.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 				if(x == 3 && z == 2)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego32.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "lego32.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 				if(x == 2 && z == 1)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load("lego12.jpeg"), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
 					bumpMap = "lego12.jpeg";
+					createMaterial(legoColor,bumpMap);
 				}
 
 			}
@@ -346,48 +289,36 @@
 			{
 				if(colorCode == 1)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xff0000, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
+					legoColor = 0xff0000;
+					createMaterial(legoColor,bumpMap);
 				}
 				if(colorCode == 2)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x2d44f2, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
+					legoColor = 0x2d44f2;
+					createMaterial(legoColor,bumpMap);
 				}
 				if(colorCode == 3)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0x40f03a, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
+					legoColor = 0x40f03a;
+					createMaterial(legoColor,bumpMap);
 				}
 				if(colorCode == 4)
 				{
-					materials = [
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMap), bumpScale: 50 } ),
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
-								new THREE.MeshPhongMaterial( { color: 0xeaf61d, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
-							];
+					legoColor = 0xeaf61d;
+					createMaterial(legoColor,bumpMap);
 				}
+			}
+
+			function createMaterial(colorOfLego,bumpMapParam)
+			{
+				materials = [
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" ),bumpMap: new THREE.TextureLoader().load(bumpMapParam), bumpScale: 50 } ),
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} ),
+							new THREE.MeshPhongMaterial( { color: colorOfLego, map: new THREE.TextureLoader().load( "square-outline-textured.png" )} )
+						];
 			}
 
 
