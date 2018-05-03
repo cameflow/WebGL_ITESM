@@ -32,6 +32,7 @@
 			var bumpMap = "";
 			var legoColor = 0xff0000;
 			var isFloating;
+			var isOverlapping;
 
 			var controls = null;
 
@@ -147,6 +148,11 @@
 					var rollOverPos = new THREE.Vector3(xPosRoll,rollOverMesh.position.y, zPosRoll);
 					// rollOverMesh.collider = (new THREE.Raycaster( rollOverMesh.position, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
 					rollOverMesh.collider = (new THREE.Raycaster( rollOverPos, new THREE.Vector3( 0, -1, 0 ), 0, 30 ));
+					rollOverMesh.collider2 = (new THREE.Raycaster(rollOverMesh.position, new THREE.Vector3( 0,0,-1),0,10*zSize));
+					rollOverMesh.collider3 = (new THREE.Raycaster(rollOverMesh.position, new THREE.Vector3( 0,0,1),0,10*zSize));
+					rollOverMesh.collider4 = (new THREE.Raycaster(rollOverMesh.position, new THREE.Vector3( 1,0,0),0,10*xSize));
+					rollOverMesh.collider5 = (new THREE.Raycaster(rollOverMesh.position, new THREE.Vector3( -1,0,0),0,10*xSize));
+
 					if(xSize > 1)
 					{
 						rollOverMesh.position.x -= 25 * (xSize-1);
@@ -156,7 +162,11 @@
 						rollOverMesh.position.z -= 25 * (zSize-1);
 					}
 					var cubeIntersections = rollOverMesh.collider.intersectObjects( objects, true );
-					console.log(cubeIntersections.length);
+					var overlappingCubes1 = rollOverMesh.collider2.intersectObjects(objects,true);
+					var overlappingCubes2 = rollOverMesh.collider3.intersectObjects(objects,true);
+					var overlappingCubes3 = rollOverMesh.collider4.intersectObjects(objects,true);
+					var overlappingCubes4 = rollOverMesh.collider5.intersectObjects(objects,true);
+					console.log(overlappingCubes1.length);
 					if(cubeIntersections.length > 0)
 					{
 						isFloating = false;
@@ -164,6 +174,14 @@
 					else
 					{
 						isFloating = true;
+					}
+					if(overlappingCubes1.length > 0 || overlappingCubes2.length > 0 || overlappingCubes3.length > 0 || overlappingCubes4.length > 0)
+					{
+						isOverlapping = true;
+					}
+					else
+					{
+						isOverlapping = false;
 					}
 
 
@@ -187,7 +205,7 @@
 						}
 					// create cube
 					} else {
-						if (!isFloating)
+						if (!isFloating && !isOverlapping)
 						{
 							var voxel = new THREE.Mesh( cubeGeo, materials );
 							voxel.position.copy( intersect.point ).add( intersect.face.normal );
